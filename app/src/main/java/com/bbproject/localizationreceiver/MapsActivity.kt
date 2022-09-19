@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.provider.Settings
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.RelativeLayout
@@ -98,7 +99,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, SharedPreferences.
     var picker: DatePickerDialog? = null
     var currentMarker: Marker? = null
     var currentKidsMarker: Marker? = null
-    var seekbar: SeekBar? = null
+//    var seekbar: SeekBar? = null
+    var currentCameraPosition = -1
+    var maxCameraPosition = -1
+    private lateinit var minusButton: Button
+    private lateinit var plusButton: Button
 
     // Monitors the state of the connection to the service.
     private var mServiceConnection: ServiceConnection = object : ServiceConnection {
@@ -128,7 +133,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, SharedPreferences.
         eRight = findViewById(R.id.right)
         eLeft = findViewById(R.id.left)
         gps = findViewById(R.id.gps)
-        seekbar = findViewById(R.id.seekbar)
+        //seekbar = findViewById(R.id.seekbar)
+        minusButton = findViewById(R.id.minus)
+        plusButton = findViewById(R.id.plus)
+
         val cldr: Calendar = Calendar.getInstance()
         val day: Int = cldr.get(Calendar.DAY_OF_MONTH)
         val month: Int = cldr.get(Calendar.MONTH)
@@ -207,7 +215,55 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, SharedPreferences.
                 updateUI(auth.currentUser)
             }
         }
-        seekbar?.setOnSeekBarChangeListener(
+        plusButton.setOnTouchListener(
+            object: View.OnTouchListener{
+                override fun onTouch(p0: View?, p1: MotionEvent?): Boolean {
+                    if (currentCameraPosition < maxCameraPosition) {
+                        currentCameraPosition ++
+                        var idx = 0
+                        run breaking@{
+                            mCurrentMap.forEach { pos ->
+                                if (idx == currentCameraPosition) {
+                                    currentKidsMarker?.position = pos.value
+                                    currentKidsMarker?.title = pos.key
+                                    currentKidsMarker?.showInfoWindow()
+                                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(pos.value, 17.0f),150,null)
+                                    return@breaking
+                                }
+                                idx++
+                            }
+                        }
+                        return true
+                    }
+                    return false
+                }
+            }
+        )
+        minusButton.setOnTouchListener(
+            object: View.OnTouchListener{
+                override fun onTouch(p0: View?, p1: MotionEvent?): Boolean {
+                    if (currentCameraPosition > 0) {
+                        currentCameraPosition --
+                        var idx = 0
+                        run breaking@{
+                            mCurrentMap.forEach { pos ->
+                                if (idx == currentCameraPosition) {
+                                    currentKidsMarker?.position = pos.value
+                                    currentKidsMarker?.title = pos.key
+                                    currentKidsMarker?.showInfoWindow()
+                                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(pos.value, 17.0f),150,null)
+                                    return@breaking
+                                }
+                                idx++
+                            }
+                        }
+                        return true
+                    }
+                    return false
+                }
+            }
+        )
+/*        seekbar?.setOnSeekBarChangeListener(
             object : SeekBar.OnSeekBarChangeListener{
                 override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                     var idx = 0
@@ -227,7 +283,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, SharedPreferences.
                 override fun onStartTrackingTouch(p0: SeekBar) {}
                 override fun onStopTrackingTouch(p0: SeekBar) {}
             }
-        )
+        )*/
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
@@ -359,7 +415,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, SharedPreferences.
                 val database = Firebase.database
 
                 myRef = database.getReference("gps").child(currentDate)
-
+                currentCameraPosition = -1
                 myRef!!.get().addOnCompleteListener(this){
                     val polyOpt = PolylineOptions()
                         .width(10f)
@@ -393,8 +449,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, SharedPreferences.
                     if (zindex==0f) {
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(35.68, 139.76), 10.0f))
                     }
-                    seekbar?.max = (zindex-1).toInt()
-                    seekbar?.progress = (zindex-1).toInt()
+                    //seekbar?.max = (zindex-1).toInt()
+                    //seekbar?.progress = (zindex-1).toInt()
+                    currentCameraPosition = (zindex-1).toInt()
+                    maxCameraPosition = (zindex-1).toInt()
                     mMap.addPolyline(polyOpt)
 
                     val current = LocalDateTime.now()
@@ -428,13 +486,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, SharedPreferences.
                                             ).anchor(0.5f, 0.5f).title(dataSnapshot.key).zIndex(ZINDEX_KIDS)
                                         )
                                     }
-                                    if (seekbar?.progress == seekbar?.max) {
+                                    if (currentCameraPosition == maxCameraPosition) {
+                                        currentCameraPosition++
+
+                                        //seekbar?.max = (seekbar?.max?:0) + 1
+                                        //seekbar?.progress = (seekbar?.progress?:0) + 1
+                                    }/* else {
                                         seekbar?.max = (seekbar?.max?:0) + 1
-                                        seekbar?.progress = (seekbar?.progress?:0) + 1
-                                    } else {
-                                        seekbar?.max = (seekbar?.max?:0) + 1
-                                    }
+                                    }*/
                                     currentKidsMarker?.showInfoWindow()
+                                    maxCameraPosition++
                                 }
                             }
 

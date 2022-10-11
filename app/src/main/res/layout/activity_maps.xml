@@ -59,7 +59,7 @@
         android:id="@+id/seek"
         android:layout_above="@+id/fab"
         android:layout_alignParentStart="true"
-        android:layout_width="120dp"
+        android:layout_width="110dp"
         android:layout_height="50dp"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
@@ -69,7 +69,7 @@
         android:background="@drawable/rounded_button">
         <Button
             android:id="@+id/minus"
-            android:layout_toLeftOf="@+id/plus"
+            android:layout_alignParentLeft="true"
             android:layout_width="50dp"
             android:layout_height="wrap_content"
             app:icon="@drawable/ic_minus"
@@ -77,11 +77,10 @@
             android:background="@android:color/transparent"/>
         <Button
             android:id="@+id/plus"
-            android:layout_alignParentRight="true"
+            android:layout_toRightOf="@+id/minus"
             android:layout_width="50dp"
             android:layout_height="wrap_content"
             app:icon="@drawable/ic_plus"
-            android:layout_marginEnd="10dp"
             android:padding="5dp"
             android:background="@android:color/transparent"/>
 
